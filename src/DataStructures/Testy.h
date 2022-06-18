@@ -33,8 +33,10 @@ private:
 #define TEST(testName) Testy::Report report(testName)
 #define ASSERT(expr, text) \
 		do { \
-			if (!(expr)) \
+			if (!(expr)) {\
 				report.Set(Testy::Report::Failed, text); \
+				return;\
+			} \
 		} while (false)
 
 

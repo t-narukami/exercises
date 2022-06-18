@@ -2,17 +2,17 @@
 #include <memory>
 
 template <typename T>
-class ObjectPool
+class Vector
 {
 public:
-	ObjectPool() = default;
+	Vector() = default;
 
-	~ObjectPool()
+	~Vector()
 	{
 		Clear();
 	}
 
-	ObjectPool(ObjectPool const& rhs)
+	Vector(Vector const& rhs)
 		: m_data(std::make_unique<uint8_t[]>(rhs.Count() * sizeof T))
 		, m_capacity(rhs.Count())
 		, m_count(rhs.Count())
@@ -23,14 +23,14 @@ public:
 		}
 	}
 
-	ObjectPool(ObjectPool&& rhs)
+	Vector(Vector&& rhs)
 		: m_data(std::move(rhs.m_data))
 		, m_capacity(rhs.m_capacity)
 		, m_count(rhs.m_count)
 	{
 	}
 
-	ObjectPool& operator=(ObjectPool const& rhs)
+	Vector& operator=(Vector const& rhs)
 	{
 		m_data = std::make_unique<uint8_t[]>(rhs.Count() * sizeof T);
 		m_count = rhs.m_count;
@@ -43,7 +43,7 @@ public:
 		return *this;
 	}
 
-	ObjectPool& operator=(ObjectPool&& rhs)
+	Vector& operator=(Vector&& rhs)
 	{
 		m_data = std::move(rhs.m_data);
 		m_capacity = rhs.m_capacity;
@@ -53,26 +53,24 @@ public:
 
 	size_t Count() const { return m_count; }
 
-	T& Add(T const& v)
+	size_t Add(T const& v)
 	{
 		if ((m_count + 1) > m_capacity)
 		{
 			Resize((m_capacity + 1) * 2);
 		}
-		T* ptr = new (m_data.get() + m_count * sizeof T) T(v);
-		m_count++;
-		return *ptr;
+		new (m_data.get() + m_count * sizeof T) T(v);
+		return m_count++;
 	}
 
-	T& Add(T&& v)
+	size_t Add(T&& v)
 	{
 		if ((m_count + 1) > m_capacity)
 		{
 			Resize((m_capacity + 1) * 2);
 		}
-		T* ptr = new(m_data.get() + m_count * sizeof T) T(std::move(v));
-		m_count++;
-		return *ptr;
+		new(m_data.get() + m_count * sizeof T) T(std::move(v));
+		return m_count++;
 	}
 
 	template <typename ...Args>
@@ -119,6 +117,9 @@ public:
 		assert(idx < m_count && "Index out of bounds");
 		return *reinterpret_cast<T const*>(m_data.get() + idx * sizeof T);
 	}
+
+	T& operator[](size_t idx) { return At(idx); }
+	T const& operator[](size_t idx) const { return At(idx); }
 
 	void Reserve(size_t maxCount)
 	{
