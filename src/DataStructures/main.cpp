@@ -2,95 +2,69 @@
 #include <cassert>
 #include <string>
 
+#include "Testy.h"
 #include "ObjectPool.h"
 
 void TestObjectPool()
 {
+	TEST("Object pool test");
 	ObjectPool<std::string> pool;
-	assert(pool.Count() == 0 && "Construct and empty pool of strings");
+	ASSERT(pool.Count() == 0, "Construct and empty pool of strings");
 	pool.Add("first");
-	assert(pool.Count() == 1 && "Add an element");
-	assert(pool.At(0) == "first" && "Element is correct");
+	ASSERT(pool.Count() == 1, "Add an element");
+	ASSERT(pool.At(0) == "first", "Element is correct");
 	pool.Emplace("second");
-	assert(pool.Count() == 2 && "Emplace another element");
-	assert(pool.At(1) == "second" && "Another element is also correct");
+	ASSERT(pool.Count() == 2, "Emplace another element");
+	ASSERT(pool.At(1) == "second", "Another element is also correct");
 	pool.Erase(0);
-	assert(pool.Count() == 1 && "Remove first element");
-	assert(pool.At(0) == "second" && "Second element is now first");
+	ASSERT(pool.Count() == 1 , "Remove first element");
+	ASSERT(pool.At(0) == "second", "Second element is now first");
 	pool.Clear();
-	assert(pool.Count() == 0 && "Clear the pool");
+	ASSERT(pool.Count() == 0, "Clear the pool");
 
 	for (int i = 0; i < 10; ++i)
 	{
 		pool.Add(std::to_string(i));
 	}
-	assert(pool.Count() == 10 && "Add 10 elemets");
+	ASSERT(pool.Count() == 10, "Add 10 elemets");
 
 	for (int i = 0; i < pool.Count(); ++i)
 	{
-		assert(pool.At(i) == std::to_string(i) && "All the elements are correct");
+		ASSERT(pool.At(i) == std::to_string(i), "All the elements are correct");
 	}
 
 	ObjectPool<std::string> anotherPool = pool;
-	assert(anotherPool.Count() == pool.Count() && "Copy the pool");
+	ASSERT(anotherPool.Count() == pool.Count(), "Copy the pool");
 
 	for (int i = 0; i < pool.Count(); ++i)
 	{
-		assert(anotherPool.At(i) == pool.At(i) && "Correct elements are copied");
+		ASSERT(anotherPool.At(i) == pool.At(i), "Correct elements are copied");
 	}
 
 	anotherPool.Erase(anotherPool.Count() - 1);
-	assert(anotherPool.Count() == 9 && "Erase last element");
+	ASSERT(anotherPool.Count() == 9, "Erase last element");
 
 	{
-		struct MovableObj
-		{
-			explicit MovableObj(int v) : value(v) {}
-			MovableObj(MovableObj const&) = delete;
-			MovableObj(MovableObj&& rhs) noexcept : value(rhs.value) {};
-
-			int value = 0;
-		};
-
-		ObjectPool<MovableObj> data;
-		data.Add(MovableObj(10));
-		assert(data.At(0).value == 10 && "Add with move constructor");
+		ObjectPool<Testy::OnlyMovable> data;
+		data.Add(Testy::OnlyMovable(10));
+		ASSERT(data.At(0).value == 10 , "Add with move constructor");
 	}
 	{
-		struct CopyableObj
-		{
-			explicit CopyableObj(int v) : value(v) {}
-			CopyableObj(CopyableObj const& rhs) : value(rhs.value) {};
-			CopyableObj(CopyableObj&& rhs) = delete;
-
-			int value = 0;
-		};
-
-		ObjectPool<CopyableObj> data;
-		CopyableObj obj(10);
+		ObjectPool<Testy::OnlyCopyable> data;
+		Testy::OnlyCopyable obj(10);
 		data.Add(obj);
-		assert(data.At(0).value == 10 && "Add with move constructor");
+		ASSERT(data.At(0).value == 10, "Add with move constructor");
 	}
 	{
-		struct NonTrivialObj
-		{
-			NonTrivialObj() = delete;
-			explicit NonTrivialObj(int v) : value(v) {}
-
-			int value = 0;
-		};
-
-		ObjectPool<NonTrivialObj> data;
-		data.Add(NonTrivialObj(10));
-		assert(data.At(0).value == 10 && "Add with move constructor");
-		NonTrivialObj obj(11);
+		ObjectPool<Testy::NonTriviallyConstructable> data;
+		data.Add(Testy::NonTriviallyConstructable(10));
+		ASSERT(data.At(0).value == 10, "Add with move constructor");
+		Testy::NonTriviallyConstructable obj(11);
 		data.Add(obj);
-		assert(data.At(1).value == 11 && "Add with copy constructor");
+		ASSERT(data.At(1).value == 11, "Add with copy constructor");
 		data.Emplace(12);
-		assert(data.At(2).value == 12 && "Emplace with arguments");
+		ASSERT(data.At(2).value == 12, "Emplace with arguments");
 	}
-
-	std::cout << __FUNCTION__ << ": PASSED!" << std::endl;
 }
 
 void TestAVLTree()
