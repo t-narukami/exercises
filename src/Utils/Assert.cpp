@@ -1,5 +1,8 @@
+#include "pch.h"
+
 #include "Assert.h"
 #include <sstream>
+#include <iostream>
 
 #ifdef _WIN32
 #include "Windows.h"
@@ -16,6 +19,7 @@ bool ShowAbortWindow(const char* expr, const char* msg, const char* file, int li
 {
 	std::ostringstream ss;
 	ss << msg << "\n\"" << expr << "\"\n" << file << ":" << line;
+	std::cout << ss.str() << std::endl;
 	return AbortMessageBox(ss.str().c_str()) == ABORTED;
 }
 

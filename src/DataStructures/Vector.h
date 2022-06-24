@@ -1,5 +1,6 @@
 #pragma once
 #include <memory>
+#include "Assert.h"
 
 template <typename T>
 class Vector
@@ -108,18 +109,29 @@ public:
 
 	T& At(size_t idx)
 	{
-		assert(idx < m_count && "Index out of bounds");
+		MY_ASSERT(idx < m_count && "Index out of bounds");
 		return *reinterpret_cast<T*>(m_data.get() + idx * sizeof T);
 	}
 
 	T const& At(size_t idx) const
 	{
-		assert(idx < m_count && "Index out of bounds");
+		MY_ASSERT(idx < m_count && "Index out of bounds");
 		return *reinterpret_cast<T const*>(m_data.get() + idx * sizeof T);
 	}
 
 	T& operator[](size_t idx) { return At(idx); }
+
 	T const& operator[](size_t idx) const { return At(idx); }
+
+	T& Back() { return At(m_count - 1); }
+
+	T const& Back() const { return At(m_count - 1); }
+
+	void PopBack()
+	{
+		MY_ASSERT(m_count, "PopBack on empty vector");
+		Erase(m_count - 1);
+	}
 
 	void Reserve(size_t maxCount)
 	{

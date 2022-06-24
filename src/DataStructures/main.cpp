@@ -2,9 +2,10 @@
 #include <cassert>
 #include <string>
 
-//#include "AVLTree.h"
+#include "BST.h"
 #include "Testy.h"
 #include "Vector.h"
+#include "Assert.h"
 
 void TestVector()
 {
@@ -68,18 +69,17 @@ void TestVector()
 	}
 }
 
-void TestAVLTree()
+template <typename T>
+void TestTree()
 {
-	/*
-	TEST("Test AVL tree");
-	AVLTree<int> tree;
+	TEST("Test tree");
+	T tree;
 	ASSERT(tree.Count() == 0, "Construct empty tree");
 
 	tree.Add(10);
 	ASSERT(tree.Count() == 1 , "Add one element");
 	ASSERT(*tree.Begin() == 10 , "Element is at the start");
-	ASSERT(tree.Find(10).IsValid() , "Element can be searched");
-	ASSERT(tree.Find(10) == true, "Element can be searched, operator bool");
+	ASSERT(tree.Find(10), "Element can be searched, operator bool");
 	ASSERT(*tree.Find(10) == 10 , "Element can be searched and value is correct");
 
 	tree.Add(10);
@@ -122,7 +122,7 @@ void TestAVLTree()
 		}
 	}
 
-	AVLTree<int> otherTree = tree;
+	T otherTree = tree;
 	ASSERT(otherTree.Count() == tree.Count() , "Copy a tree");
 	{
 		auto treeIt = tree.Begin();
@@ -132,13 +132,12 @@ void TestAVLTree()
 			ASSERT(*treeIt++ == *otherTreeIt++, "Elements are copied correctly");
 		}
 	}
-	*/
 }
 
 void RunTests()
 {
 	TestVector();
-	TestAVLTree();
+	TestTree<BST<int>>();
 }
 
 int main()
