@@ -1,11 +1,11 @@
-#include <iostream>
 #include <cassert>
+#include <iostream>
 #include <string>
 
+#include "Assert.h"
 #include "BST.h"
 #include "Testy.h"
 #include "Vector.h"
-#include "Assert.h"
 
 void TestVector()
 {
@@ -78,7 +78,7 @@ void TestTree()
 
 	tree.Add(10);
 	ASSERT(tree.Count() == 1 , "Add one element");
-	ASSERT(*tree.Begin() == 10 , "Element is at the start");
+	ASSERT(*tree.begin() == 10 , "Element is at the start");
 	ASSERT(tree.Find(10), "Element can be searched, operator bool");
 	ASSERT(*tree.Find(10) == 10 , "Element can be searched and value is correct");
 
@@ -100,7 +100,7 @@ void TestTree()
 	}
 	ASSERT(tree.Count() == 10 , "Add ten elements in reverse oreder");
 	{
-		auto it = tree.Begin();
+		auto it = tree.begin();
 		for (int i = 0; i < 10; ++i)
 		{
 			ASSERT(*it == i , "Elements should be sorted");
@@ -115,7 +115,7 @@ void TestTree()
 	{
 		int i = 1;
 		int value = 0;
-		for (auto it = tree.Begin(); it != tree.End(); ++it, ++i)
+		for (auto it = tree.begin(); it != tree.end(); ++it, ++i)
 		{
 			ASSERT(*it == value , "Elements should be sorted");
 			value += !(i % 2);
@@ -125,9 +125,9 @@ void TestTree()
 	T otherTree = tree;
 	ASSERT(otherTree.Count() == tree.Count() , "Copy a tree");
 	{
-		auto treeIt = tree.Begin();
-		auto otherTreeIt = otherTree.Begin();
-		while (treeIt != tree.End())
+		auto treeIt = tree.begin();
+		auto otherTreeIt = otherTree.begin();
+		while (treeIt != tree.end())
 		{
 			ASSERT(*treeIt++ == *otherTreeIt++, "Elements are copied correctly");
 		}
