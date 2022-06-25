@@ -6,14 +6,14 @@ template <typename T>
 struct BinaryNode;
 
 template <typename T>
-using BinaryNodePtr = std::unique_ptr<BinaryNode<T>>;
+using BinaryNodeHandle = std::unique_ptr<BinaryNode<T>>;
 
 template <typename T>
 struct BinaryNode
 {
 	BinaryNode* parent = nullptr;
-	BinaryNodePtr<T> left = nullptr;
-	BinaryNodePtr<T> right = nullptr;
+	BinaryNodeHandle<T> left = nullptr;
+	BinaryNodeHandle<T> right = nullptr;
 
 	T key;
 
@@ -22,63 +22,49 @@ struct BinaryNode
 };
 
 template <typename T>
-BinaryNodePtr<T> MakeBinaryNode(T const& value)
+BinaryNodeHandle<T> MakeBinaryNode(T const& value)
 {
 	return std::make_unique<BinaryNode<T>>(value);
 }
 
 template <typename T>
-BinaryNodePtr<T> MakeBinaryNode(T&& value)
+BinaryNodeHandle<T> MakeBinaryNode(T&& value)
 {
 	return std::make_unique<BinaryNode<T>>(std::move(value));
 }
 
 template <typename T>
-void SetLeftLeaf(BinaryNode<T>* node, BinaryNodePtr<T>&& leaf)
+void SetLeftLeaf(BinaryNode<T>* node, BinaryNodeHandle<T>&& leaf)
 {
-	node->left = std::move(leaf);
-	node->left->parent = node;
+	if (node->left = std::move(leaf))
+	{
+		node->left->parent = node;
+	}
 }
 
 template <typename T>
-void SetRightLeaf(BinaryNode<T>* node, BinaryNodePtr<T>&& leaf)
+void SetRightLeaf(BinaryNode<T>* node, BinaryNodeHandle<T>&& leaf)
 {
-	node->right = std::move(leaf);
-	node->right->parent = node;
+	if (node->right = std::move(leaf))
+	{
+		node->right->parent = node;
+	}
 }
 
 template <typename T>
-BinaryNodePtr<T>* RightMostLeaf(BinaryNodePtr<T>* const root)
+BinaryNodeHandle<T>* RightMostLeaf(BinaryNodeHandle<T>* const root)
 {
 	if (!root) 
 	{
 		return nullptr;
 	}
 	
-	BinaryNodePtr<T>* parent = root;
-	BinaryNodePtr<T>* leaf = &(*root)->right;
+	BinaryNodeHandle<T>* parent = root;
+	BinaryNodeHandle<T>* leaf = &(*root)->right;
 	while (*leaf)
 	{
 		parent = leaf;
 		leaf = &(*parent)->right;
-	}
-	return parent;
-}
-
-template <typename T>
-BinaryNode<T>* LeftMostLeaf(BinaryNode<T>* const root)
-{
-	if (!root) 
-	{
-		return nullptr;
-	}
-	
-	BinaryNode<T>* parent = root;
-	BinaryNode<T>* leaf = root->left.get();
-	while (leaf)
-	{
-		parent = leaf;
-		leaf = parent->left.get();
 	}
 	return parent;
 }
@@ -97,6 +83,24 @@ BinaryNode<T>* RightMostLeaf(BinaryNode<T>* const root)
 	{
 		parent = leaf;
 		leaf = parent->right.get();
+	}
+	return parent;
+}
+
+template <typename T>
+BinaryNode<T>* LeftMostLeaf(BinaryNode<T>* const root)
+{
+	if (!root) 
+	{
+		return nullptr;
+	}
+	
+	BinaryNode<T>* parent = root;
+	BinaryNode<T>* leaf = root->left.get();
+	while (leaf)
+	{
+		parent = leaf;
+		leaf = parent->left.get();
 	}
 	return parent;
 }
@@ -144,7 +148,7 @@ BinaryNode<T>* Predecessor(BinaryNode<T>* const root)
 }
 
 template <typename T>
-BinaryNodePtr<T>* GetParentLeaf(BinaryNode<T> const* node)
+BinaryNodeHandle<T>* GetParentLeaf(BinaryNode<T> const* node)
 {
 	if (!node || !node->parent)
 	{
@@ -163,9 +167,9 @@ BinaryNodePtr<T>* GetParentLeaf(BinaryNode<T> const* node)
 }
 
 template <typename T>
-BinaryNodePtr<T> Clone(BinaryNodePtr<T> const& root) noexcept
+BinaryNodeHandle<T> Clone(BinaryNodeHandle<T> const& root) noexcept
 { 
-	BinaryNodePtr<T> cloneRoot = MakeBinaryNode<T>(root->key);
+	BinaryNodeHandle<T> cloneRoot = MakeBinaryNode<T>(root->key);
 
 	BinaryNode<T>* clone = cloneRoot.get();
 	BinaryNode<T>* orig = root.get();

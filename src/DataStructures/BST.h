@@ -48,7 +48,7 @@ public:
 private:
 	void InsertNode(T&& value);
 
-	BinaryNodePtr<T> m_root;
+	BinaryNodeHandle<T> m_root;
 	int m_count = 0;
 };
 
@@ -118,7 +118,7 @@ template <typename T>
 void BST<T>::InsertNode(T&& value)
 {
 	BinaryNode<T>* parent = nullptr;
-	BinaryNodePtr<T>* it = &m_root;
+	BinaryNodeHandle<T>* it = &m_root;
 	while (*it)
 	{
 		parent = it->get();
@@ -149,28 +149,22 @@ void BST<T>::Erase(Iterator const& it)
 {
 	MY_ASSERT(it, "Erasing invalid iterator");
 
-	BinaryNodePtr<T>* ptr = GetParentLeaf(it.GetPtr());
+	BinaryNodeHandle<T>* ptr = GetParentLeaf(it.GetPtr());
 	if (!ptr)
 	{
 		ptr = &m_root;
 	}
-	BinaryNodePtr<T>* left = &(*ptr)->left;
-	BinaryNodePtr<T>* right = &(*ptr)->right;
+	BinaryNodeHandle<T>* left = &(*ptr)->left;
+	BinaryNodeHandle<T>* right = &(*ptr)->right;
 
 	--m_count;
 	if (*left && *right)
 	{
 		// Find and detach predecessor
-		BinaryNodePtr<T> predecessor = std::move(*RightMostLeaf(left));
+		BinaryNodeHandle<T> predecessor = std::move(*RightMostLeaf(left));
 		// Move leaves from ptr to predecessor
-		if (predecessor->right = std::move(*right))
-		{
-			predecessor->right->parent = predecessor.get();
-		}
-		if (predecessor->left = std::move(*left))
-		{
-			predecessor->left->parent = predecessor.get();
-		}
+		SetRightLeaf(predecessor.get(), std::move(*right));
+		SetLeftLeaf(predecessor.get(), std::move(*left));
 		// Attach predecessor to ptr's parrent
 		predecessor->parent = (*ptr)->parent;
 		*ptr = std::move(predecessor);
