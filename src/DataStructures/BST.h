@@ -31,16 +31,19 @@ public:
 
 	int Count() const { return m_count; }
 
-	BinaryNodeIterator<T> Find(T const& v);
+public:
+	using Iterator = BinaryNodeIterator<T>;
+
+	Iterator Find(T const& v);
 
 	void Erase(T const& v);
-	void Erase(BinaryNodeIterator<T> const& it);
+	void Erase(Iterator const& it);
 
-	BinaryNodeIterator<T> begin() const { return { LeftMostLeaf(m_root.get()) }; }
-	BinaryNodeIterator<T> end() const { return { nullptr }; }
+	Iterator begin() const { return { LeftMostLeaf(m_root.get()) }; }
+	Iterator end() const { return { nullptr }; }
 
-	BinaryNodeIterator<T> begin() { return { LeftMostLeaf(m_root.get()) }; }
-	BinaryNodeIterator<T> end() { return { nullptr }; }
+	Iterator begin() { return { LeftMostLeaf(m_root.get()) }; }
+	Iterator end() { return { nullptr }; }
 
 private:
 	void InsertNode(T&& value);
@@ -127,7 +130,7 @@ void BST<T>::InsertNode(T&& value)
 }
 
 template <typename T>
-BinaryNodeIterator<T> BST<T>::Find(T const& v)
+typename BST<T>::Iterator BST<T>::Find(T const& v)
 {
 	BinaryNode<T>* it = m_root.get();
 	while (it)
@@ -142,7 +145,7 @@ BinaryNodeIterator<T> BST<T>::Find(T const& v)
 }
 
 template <typename T>
-void BST<T>::Erase(BinaryNodeIterator<T> const& it)
+void BST<T>::Erase(Iterator const& it)
 {
 	MY_ASSERT(it, "Erasing invalid iterator");
 
