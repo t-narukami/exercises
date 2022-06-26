@@ -3,70 +3,38 @@
 #include <string>
 
 #include "Assert.h"
+#include "Benchy.h"
 #include "BST.h"
 #include "Testy.h"
 #include "Vector.h"
 
-void TestVector()
+void TestVector();
+
+template <template <typename> typename T, typename V>
+void TestBST(std::string const& name);
+
+void RunTests()
 {
-	TEST("Vector test");
-	Vector<std::string> vector;
-	ASSERT(vector.Count() == 0, "Construct and empty vector of strings");
-	vector.Add("first");
-	ASSERT(vector.Count() == 1, "Add an element");
-	ASSERT(vector.At(0) == "first", "Element is correct");
-	vector.Emplace("second");
-	ASSERT(vector.Count() == 2, "Emplace another element");
-	ASSERT(vector.At(1) == "second", "Another element is also correct");
-	vector.Erase(0);
-	ASSERT(vector.Count() == 1 , "Remove first element");
-	ASSERT(vector.At(0) == "second", "Second element is now first");
-	vector.Clear();
-	ASSERT(vector.Count() == 0, "Clear the vector");
+	TestVector();
+	TestBST<BST, int>("Test BST<int>");
+	TestBST<BST, unsigned>("Test BST<unsigned>");
+	TestBST<BST, float>("Test BST<float>");
+}
 
-	for (int i = 0; i < 10; ++i)
-	{
-		vector.Add(std::to_string(i));
-	}
-	ASSERT(vector.Count() == 10, "Add 10 elemets");
+template <template <typename> typename T, typename V>
+void BenchBST(std::string const& name);
 
-	for (int i = 0; i < vector.Count(); ++i)
-	{
-		ASSERT(vector.At(i) == std::to_string(i), "All the elements are correct");
-	}
+void RunBenchmarks()
+{
+	BenchBST<BST, int>("Bench BST<int>");
+}
 
-	Vector<std::string> anotherVector = vector;
-	ASSERT(anotherVector.Count() == vector.Count(), "Copy the vector");
+int main()
+{
+	RunTests();
+	RunBenchmarks();
 
-	for (int i = 0; i < vector.Count(); ++i)
-	{
-		ASSERT(anotherVector.At(i) == vector.At(i), "Correct elements are copied");
-	}
-
-	anotherVector.Erase(anotherVector.Count() - 1);
-	ASSERT(anotherVector.Count() == 9, "Erase last element");
-
-	{
-		Vector<Testy::OnlyMovable> data;
-		data.Add(Testy::OnlyMovable(10));
-		ASSERT(data.At(0).value == 10 , "Add with move constructor");
-	}
-	{
-		Vector<Testy::OnlyCopyable> data;
-		Testy::OnlyCopyable obj(10);
-		data.Add(obj);
-		ASSERT(data.At(0).value == 10, "Add with move constructor");
-	}
-	{
-		Vector<Testy::NonTriviallyConstructable> data;
-		data.Add(Testy::NonTriviallyConstructable(10));
-		ASSERT(data.At(0).value == 10, "Add with move constructor");
-		Testy::NonTriviallyConstructable obj(11);
-		data.Add(obj);
-		ASSERT(data.At(1).value == 11, "Add with copy constructor");
-		data.Emplace(12);
-		ASSERT(data.At(2).value == 12, "Emplace with arguments");
-	}
+	return 0;
 }
 
 template <template <typename> class T, typename V>
@@ -224,17 +192,90 @@ void TestBST(std::string const& testName = "Test Binary Search Tree")
 	}
 }
 
-void RunTests()
+void TestVector()
 {
-	TestVector();
-	TestBST<BST, int>("Test BST<int>");
-	TestBST<BST, unsigned>("Test BST<unsigned>");
-	TestBST<BST, float>("Test BST<float>");
+	TEST("Vector test");
+	Vector<std::string> vector;
+	ASSERT(vector.Count() == 0, "Construct and empty vector of strings");
+	vector.Add("first");
+	ASSERT(vector.Count() == 1, "Add an element");
+	ASSERT(vector.At(0) == "first", "Element is correct");
+	vector.Emplace("second");
+	ASSERT(vector.Count() == 2, "Emplace another element");
+	ASSERT(vector.At(1) == "second", "Another element is also correct");
+	vector.Erase(0);
+	ASSERT(vector.Count() == 1 , "Remove first element");
+	ASSERT(vector.At(0) == "second", "Second element is now first");
+	vector.Clear();
+	ASSERT(vector.Count() == 0, "Clear the vector");
+
+	for (int i = 0; i < 10; ++i)
+	{
+		vector.Add(std::to_string(i));
+	}
+	ASSERT(vector.Count() == 10, "Add 10 elemets");
+
+	for (int i = 0; i < vector.Count(); ++i)
+	{
+		ASSERT(vector.At(i) == std::to_string(i), "All the elements are correct");
+	}
+
+	Vector<std::string> anotherVector = vector;
+	ASSERT(anotherVector.Count() == vector.Count(), "Copy the vector");
+
+	for (int i = 0; i < vector.Count(); ++i)
+	{
+		ASSERT(anotherVector.At(i) == vector.At(i), "Correct elements are copied");
+	}
+
+	anotherVector.Erase(anotherVector.Count() - 1);
+	ASSERT(anotherVector.Count() == 9, "Erase last element");
+
+	{
+		Vector<Testy::OnlyMovable> data;
+		data.Add(Testy::OnlyMovable(10));
+		ASSERT(data.At(0).value == 10 , "Add with move constructor");
+	}
+	{
+		Vector<Testy::OnlyCopyable> data;
+		Testy::OnlyCopyable obj(10);
+		data.Add(obj);
+		ASSERT(data.At(0).value == 10, "Add with move constructor");
+	}
+	{
+		Vector<Testy::NonTriviallyConstructable> data;
+		data.Add(Testy::NonTriviallyConstructable(10));
+		ASSERT(data.At(0).value == 10, "Add with move constructor");
+		Testy::NonTriviallyConstructable obj(11);
+		data.Add(obj);
+		ASSERT(data.At(1).value == 11, "Add with copy constructor");
+		data.Emplace(12);
+		ASSERT(data.At(2).value == 12, "Emplace with arguments");
+	}
 }
 
-int main()
+template <template <typename> typename T, typename V>
+void BenchBST(std::string const& name)
 {
-	RunTests();
-
-	return 0;
+	Benchy::Report report(name);
+	T<V> tree;
+	int const modulo = 1000000;
+	{
+		Benchy::Stopwatch sw(report, "Adding 1 million random elements");
+		for (int i = 0; i < 1000000; ++i)
+		{
+			tree.Add({ static_cast<V>(rand() % modulo) });
+		}
+	}
+	{
+		Benchy::Stopwatch sw(report, "Looking up random element from 1 million elements");
+		tree.Find({ static_cast<V>(rand() % modulo) });
+	}
+	{
+		Benchy::Stopwatch sw(report, "Erasing 1 million elements");
+		for (int i = 0; i < modulo; ++i)
+		{
+			tree.Erase({ static_cast<V>(i) });
+		}
+	}
 }

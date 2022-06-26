@@ -109,13 +109,13 @@ public:
 
 	T& At(size_t idx)
 	{
-		MY_ASSERT(idx < m_count && "Index out of bounds");
+		MY_ASSERT(idx < m_count, "Index out of bounds");
 		return *reinterpret_cast<T*>(m_data.get() + idx * sizeof T);
 	}
 
 	T const& At(size_t idx) const
 	{
-		MY_ASSERT(idx < m_count && "Index out of bounds");
+		MY_ASSERT(idx < m_count, "Index out of bounds");
 		return *reinterpret_cast<T const*>(m_data.get() + idx * sizeof T);
 	}
 
