@@ -14,9 +14,9 @@ struct BinaryNode
 	BinaryNode* parent = nullptr;
 	BinaryNodeHandle<T> left = nullptr;
 	BinaryNodeHandle<T> right = nullptr;
-
 	T key;
 
+	BinaryNode() = delete;
 	BinaryNode(T const& keyValue) : key(keyValue) {}
 	BinaryNode(T&& keyValue) : key(std::move(keyValue)) {}
 };
@@ -148,19 +148,19 @@ BinaryNode<T>* Predecessor(BinaryNode<T>* const root)
 }
 
 template <typename T>
-BinaryNodeHandle<T>* GetParentLeaf(BinaryNode<T> const* node)
+BinaryNodeHandle<T>* GetLeafHandle(BinaryNode<T> const* leaf)
 {
-	if (!node || !node->parent)
+	if (!leaf || !leaf->parent)
 	{
 		return nullptr;
 	}
-	if (node->parent->left.get() == node)
+	if (leaf->parent->left.get() == leaf)
 	{
-		return &node->parent->left;
+		return &leaf->parent->left;
 	}
-	if (node->parent->right.get() == node)
+	if (leaf->parent->right.get() == leaf)
 	{
-		return &node->parent->right;
+		return &leaf->parent->right;
 	}
 	MY_ASSERT(false, "Child is detached from its parent");
 	return nullptr;

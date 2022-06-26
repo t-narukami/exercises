@@ -149,7 +149,7 @@ void BST<T>::Erase(Iterator const& it)
 {
 	MY_ASSERT(it, "Erasing invalid iterator");
 
-	BinaryNodeHandle<T>* ptr = GetParentLeaf(it.GetPtr());
+	BinaryNodeHandle<T>* ptr = GetLeafHandle(it.GetPtr());
 	if (!ptr)
 	{
 		ptr = &m_root;
