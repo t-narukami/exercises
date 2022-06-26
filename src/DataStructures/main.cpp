@@ -69,75 +69,167 @@ void TestVector()
 	}
 }
 
-template <typename T>
-void TestTree()
+template <template <typename> class T, typename V>
+void TestBST(std::string const& testName = "Test Binary Search Tree")
 {
-	TEST("Test tree");
-	T tree;
-	ASSERT(tree.Count() == 0, "Construct empty tree");
+	TEST(testName);
 
-	tree.Add(10);
-	ASSERT(tree.Count() == 1 , "Add one element");
-	ASSERT(*tree.begin() == 10 , "Element is at the start");
-	ASSERT(tree.Find(10), "Element can be searched, operator bool");
-	ASSERT(*tree.Find(10) == 10 , "Element can be searched and value is correct");
-
-	tree.Add(10);
-	ASSERT(tree.Count() == 2 , "Add the same element");
-	ASSERT(*tree.Find(10) == 10 , "Element is searched correctly");
-	tree.Erase(tree.Find(10));
-	ASSERT(tree.Count() == 1 , "Element is deleted by iterator and duplicate is not affected");
-	ASSERT(*tree.Find(10) == 10 , "Element can be searched and value is correct");
-
-	tree.Add(10);
-	ASSERT(tree.Count() == 2 , "Add the same element again");
-	tree.Erase(10);
-	ASSERT(tree.Count() == 0 , "All the occurances are erased");
-
-	for (int i = 9; i >= 0; --i)
+	int const sampleCount = 100;
+	int const sampleModulo = 1000;
+	auto const FillTree = [&sampleCount, &sampleModulo](T<V>& tree)
 	{
-		tree.Add(i);
+		for (int i = 0; i < sampleCount; ++i)
+		{
+			tree.Add({ static_cast<V>(rand() % sampleModulo) });
+		}
+	};
+	auto const Equal = [](T<V> const& lhs, T<V> const& rhs)
+	{
+		if (lhs.Count() != rhs.Count())
+		{
+			return false;
+		}
+		auto lhsIt = lhs.begin();
+		auto rhsIt = rhs.begin();
+		while (lhsIt != lhs.end())
+		{
+			if (*lhsIt++ != *rhsIt++)
+			{
+				return false;
+			}
+		}
+		return true;
+	};
+
+	{
+		T<V> tree;
+		ASSERT(tree.Count() == 0, "Construct an empty tree");
 	}
-	ASSERT(tree.Count() == 10 , "Add ten elements in reverse oreder");
 	{
+		T<V> tree;
+		V const lvalue = { static_cast<V>(10) };
+		tree.Add(lvalue);
+		ASSERT(tree.Count() == 1, "Add an element by lvalue");
+		tree.Add({ static_cast<V>(11) });
+		ASSERT(tree.Count() == 2, "Add an element by rvalue");
+		tree.Emplace(static_cast<V>(12));
+		ASSERT(tree.Count() == 3, "Emplace an element");
+	}
+	{
+		T<V> tree;
+		V const value = { static_cast<V>(10) };
+		tree.Add(value);
+		ASSERT(tree.Find(value), "Element can be searched");
+		ASSERT(*tree.Find(value) == value, "Search yeild correct element");
+		tree.Erase(value);
+		ASSERT(tree.Count() == 0, "Element can be erased");
+		ASSERT(!tree.Find(value), "Can search empty tree");
+	}
+	{
+		T<V> tree;
+		V const value = { static_cast<V>(10) };
+		tree.Add(value);
+		tree.Add(value);
+		tree.Add(value);
+		ASSERT(tree.Count() == 3, "Add duplicate elements");
+		tree.Erase(tree.Find(value));
+		ASSERT(tree.Count() == 2, "Element erased by iterator doesn't affect duplicates");
+		tree.Erase(value);
+		ASSERT(tree.Count() == 0, "All occuances are erased by value");
+	}
+	{
+		T<V> tree;
+		for (int i = sampleCount; i >= 0; --i)
+		{
+			tree.Add({ static_cast<V>(i) });
+		}
+
 		auto it = tree.begin();
-		for (int i = 0; i < 10; ++i)
+		ASSERT(it, "begin() returns valid iterator");
+		ASSERT(!tree.end(), "end() returns invalid iterator");
+		ASSERT(it != tree.end(), "Iterators can be compared");
+	
+		for (int i = 0; i < sampleCount; ++i, ++it)
 		{
-			ASSERT(*it == i , "Elements should be sorted");
-			it++;
+			ASSERT(*it == V{ static_cast<V>(i) }, "Can iterate over elements in order");
 		}
-	}
-	for (int i = 9; i >= 0; --i)
-	{
-		tree.Add(i);
-	}
-	ASSERT(tree.Count() == 20 , "Add ten duplicaate elements");
-	{
-		int i = 1;
-		int value = 0;
-		for (auto it = tree.begin(); it != tree.end(); ++it, ++i)
+		it = tree.begin();
+		for (int i = 0; i < sampleCount; ++i)
 		{
-			ASSERT(*it == value , "Elements should be sorted");
-			value += !(i % 2);
+			ASSERT(*it++ == V{ static_cast<V>(i) }, "Can iterate over elements in order, post increment");
 		}
-	}
-
-	T otherTree = tree;
-	ASSERT(otherTree.Count() == tree.Count() , "Copy a tree");
-	{
-		auto treeIt = tree.begin();
-		auto otherTreeIt = otherTree.begin();
-		while (treeIt != tree.end())
+		int i = 0;
+		for (V const& value : tree)
 		{
-			ASSERT(*treeIt++ == *otherTreeIt++, "Elements are copied correctly");
+			ASSERT(value == V{ static_cast<V>(i++) }, "Can iterate over elements in for-range loop");
 		}
+		ASSERT(i == sampleCount + 1, "Correct number of elements are iterated");
+	}
+	{
+		T<V> tree;
+		FillTree(tree);
+		{
+			auto it = tree.begin();
+			V previousValue = *it;
+			for (; it != tree.end(); ++it)
+			{
+				ASSERT(previousValue <= *it, "Random elements are in order");
+				previousValue = *it;
+			}
+		}
+		for (int i = 0; i < sampleModulo / 2; ++i)
+		{
+			tree.Erase({ static_cast<V>(i) });
+		}
+		{
+			auto it = tree.begin();
+			V previousValue = *it;
+			for (; it != tree.end(); ++it)
+			{
+				ASSERT(previousValue <= *it, "Random elements are in order");
+				previousValue = *it;
+			}
+		}
+		for (int i = sampleModulo / 2; i < sampleModulo; ++i)
+		{
+			tree.Erase({ static_cast<V>(i) });
+		}
+		ASSERT(tree.Count() == 0, "Correctly removed all elements");
+	}
+	{
+		T<V> orig;
+		FillTree(orig);
+		T<V> copy(orig);
+		ASSERT(Equal(orig, copy), "Can copy construct a tree");
+	}
+	{
+		T<V> orig;
+		FillTree(orig);
+		T<V> copy = orig;
+		ASSERT(Equal(orig, copy), "Can copy assign a tree");
+	}
+	{
+		T<V> orig;
+		FillTree(orig);
+		T<V> copy = orig;
+		T<V> movedOrig(std::move(orig));
+		ASSERT(Equal(copy, movedOrig), "Can move construct a tree");
+	}
+	{
+		T<V> orig;
+		FillTree(orig);
+		T<V> copy = orig;
+		T<V> movedOrig = std::move(orig);
+		ASSERT(Equal(copy, movedOrig), "Can move assign a tree");
 	}
 }
 
 void RunTests()
 {
 	TestVector();
-	TestTree<BST<int>>();
+	TestBST<BST, int>("Test BST<int>");
+	TestBST<BST, unsigned>("Test BST<unsigned>");
+	TestBST<BST, float>("Test BST<float>");
 }
 
 int main()
