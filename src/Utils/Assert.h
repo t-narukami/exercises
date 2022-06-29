@@ -1,11 +1,12 @@
 #pragma once
+#include <cassert>
+
+#ifndef NO_DEBUG
 
 namespace MyAssert_Private 
 {
 	bool ShowAbortWindow(const char* expr, const char* msg, const char* file, int line);
 }
-
-#ifdef _DEBUG
 
 #define _MY_ASSERT_IMPL(expr, msg) \
 	do { \
@@ -17,10 +18,11 @@ namespace MyAssert_Private
 
 #define _MY_ASSERT1(expr) _MY_ASSERT_IMPL(expr, "")
 #define _MY_ASSERT2(expr, msg) _MY_ASSERT_IMPL(expr, msg)
+#define _EXPAND(x) x
 #define _MY_ASSERTX(_1, _2, NAME, ...) NAME
 
-#define MY_ASSERT(...) _MY_ASSERTX(__VA_ARGS__, _MY_ASSERT2, _MY_ASSERT1)(__VA_ARGS__)
+#define MY_ASSERT(...) _EXPAND(_MY_ASSERTX(__VA_ARGS__, _MY_ASSERT2, _MY_ASSERT1)(__VA_ARGS__))
 
 #else
-#define MY_ASSERT(expr, msg)
+#define MY_ASSERT(...)
 #endif

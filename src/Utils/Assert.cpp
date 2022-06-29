@@ -1,5 +1,7 @@
 #include "pch.h"
 
+#ifndef NO_DEBUG
+
 #include "Assert.h"
 #include <sstream>
 #include <iostream>
@@ -7,7 +9,7 @@
 #ifdef _WIN32
 #include "Windows.h"
 
-#define AbortMessageBox(message) MessageBoxA(NULL, message, "Assertion Failed", MB_ABORTRETRYIGNORE | MB_ICONEXCLAMATION | MB_DEFBUTTON1 | MB_SETFOREGROUND)
+#define AbortMessageBox(message) MessageBoxA(NULL, message, "Assertion Failed", MB_ABORTRETRYIGNORE | MB_ICONERROR | MB_DEFBUTTON1 | MB_SETFOREGROUND)
 #define ABORTED IDABORT
 #else
 #error UNSUPPORTED_PLATFORM
@@ -24,3 +26,5 @@ bool ShowAbortWindow(const char* expr, const char* msg, const char* file, int li
 }
 
 }
+
+#endif // ifndef NO_DEBUG
