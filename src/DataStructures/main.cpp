@@ -3,12 +3,15 @@
 #include <string>
 
 #include "Assert.h"
+//#include "AVLTree.h"
 #include "Benchy.h"
 #include "BST.h"
 #include "Testy.h"
+#include "MemPool.h"
 #include "Vector.h"
 
 void TestVector();
+void TestMemPool();
 
 template <template <typename> typename T, typename V>
 void TestBST(std::string const& name);
@@ -16,9 +19,9 @@ void TestBST(std::string const& name);
 void RunTests()
 {
 	TestVector();
+	TestMemPool();
 	TestBST<BST, int>("Test BST<int>");
-	TestBST<BST, unsigned>("Test BST<unsigned>");
-	TestBST<BST, float>("Test BST<float>");
+	//TestBST<AVLTree, int>("Test AVLTree<int>");
 }
 
 template <template <typename> typename T, typename V>
@@ -27,12 +30,13 @@ void BenchBST(std::string const& name);
 void RunBenchmarks()
 {
 	BenchBST<BST, int>("Bench BST<int>");
+	//BenchBST<AVLTree, int>("Bench AVLTree<int>");
 }
 
 int main()
 {
 	RunTests();
-	RunBenchmarks();
+	//RunBenchmarks();
 
 	return 0;
 }
@@ -254,6 +258,110 @@ void TestVector()
 	}
 }
 
+void TestMemPool()
+{
+	TEST("MemPool test");
+	using namespace  Memory;
+	{
+		MemPool pool(4_kB);
+		Vector<Handle<int>> handles;
+
+		for (int i = 0; i < 100; ++i)
+		{
+			handles.Add(pool.Alloc<int>(i));
+		}
+		for (int i = 0; i < 100; ++i)
+		{
+			ASSERT(handles[i], "All handles are valid");
+			ASSERT(*handles[i] == i, "All handles hold valid values");
+		}
+	}
+	{
+		struct S
+		{
+			S(uint64_t vv1, uint64_t vv2) : v1(vv1), v2(vv2) {}
+
+			uint64_t v1;
+			uint64_t v2;
+		};
+
+		MemPool pool(4_kB);
+		Vector<Handle<int>> intHandles;
+		Vector<Handle<S>> sHandles;
+
+		for (int i = 0; i < 100; ++i)
+		{
+			if (i & 1)
+			{
+				intHandles.Add(pool.Alloc<int>(i));
+			}
+			else
+			{
+				sHandles.Add(pool.Alloc<S>(i, i* i));
+			}
+		}
+
+		int intIt = 0;
+		int sIt = 0;
+		for (int i = 0; i < 100; ++i)
+		{
+			if (i & 1)
+			{
+				ASSERT(*intHandles[intIt++] == i, "Heterogeneous values are valid");
+			}
+			else
+			{
+				ASSERT(sHandles[sIt]->v1 == i && sHandles[sIt++]->v2 == (i*i), "Heterogeneous values are valid");
+			}
+		}
+	}
+	{
+		struct S
+		{
+			S() = delete;
+			S(S const&) = delete;
+			S& operator=(S const&) = delete;
+
+			S(int& counter) : ctr(counter) { ++ctr; }
+			~S() { --ctr; }
+
+			int& ctr;
+		};
+		int counter = 0;
+		{
+			MemPool pool(100);
+			{
+				Handle<S> h = pool.Alloc<S>(counter);
+				ASSERT(counter == 1, "Mempool calls constructor");
+			}
+			ASSERT(counter == 0, "Mempool calls destructor");
+			Handle<S> handle;
+			ASSERT(!handle, "Create empty handle");
+			{
+				Handle<S> h = pool.Alloc<S>(counter);
+				handle = h;
+				ASSERT(h, "Copying handle doesn't affect the original");
+				ASSERT(counter == 1, "Copying handles doesn't affect the object");
+			}
+			ASSERT(handle, "Copy handles");
+			ASSERT(counter == 1, "Object is alive until it has handles");
+			handle = {};
+			ASSERT(counter == 0, "Empty the handle");
+			{
+				Handle<S> h = pool.Alloc<S>(counter);
+				handle = std::move(h);
+				ASSERT(!h, "Moving handles invalidates the original handle");
+				ASSERT(counter == 1, "Moving handles doesn't affect the object");
+			}
+			ASSERT(handle, "Move handles");
+			Handle<S> h1 = pool.Alloc<S>(counter);
+			ASSERT(counter == 2, "Adding more objects");
+		}
+		ASSERT(counter == 0, "Moving handles doesn't affect the object");
+	}
+}
+
+
 template <template <typename> typename T, typename V>
 void BenchBST(std::string const& name)
 {
@@ -279,3 +387,4 @@ void BenchBST(std::string const& name)
 		}
 	}
 }
+
