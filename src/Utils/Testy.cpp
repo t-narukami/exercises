@@ -1,5 +1,3 @@
-#include "pch.h"
-
 #include "Testy.h"
 #include <iostream>
 

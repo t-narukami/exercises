@@ -1,5 +1,3 @@
-#include "pch.h"
-
 #ifndef NO_DEBUG
 
 #include "Assert.h"

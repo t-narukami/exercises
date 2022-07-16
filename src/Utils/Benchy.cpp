@@ -1,5 +1,3 @@
-#include "pch.h"
-
 #include "Benchy.h"
 #include <iostream>
 #include <iomanip>
