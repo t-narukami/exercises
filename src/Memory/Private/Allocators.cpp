@@ -24,6 +24,4 @@ void MallocAllocator::Deallocate(MemDesc desc)
 	std::free(desc.ptr);
 }
 
-
-
 } // namespace Memory

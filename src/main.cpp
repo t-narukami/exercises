@@ -24,7 +24,7 @@ void RunTests()
 	TestDataStructures();
 }
 
-template <template <typename> typename T, typename V>
+template <template <typename> class T, typename V>
 void BenchBST(std::string const& name)
 {
 	Benchy::Report report(name);

@@ -126,7 +126,7 @@ void TestSegregatorAllocator()
 
 	MemDesc eightBytes = ator.Allocate(8);
 	ASSERT(eightBytes.ptr && testStackAllocatorCounter1 == 1, "Should use first allocator");
-	MemDesc thirtyTwoBytes = ator.Allocate(32);
+	MemDesc thirtyTwoBytes = ator.Allocate(33);
 	ASSERT(thirtyTwoBytes.ptr && testStackAllocatorCounter2 == 1, "Should use second allocator");
 	ator.Deallocate(eightBytes);
 	ASSERT(eightBytes.ptr && testStackAllocatorCounter1 == 0, "Should use first allocator");

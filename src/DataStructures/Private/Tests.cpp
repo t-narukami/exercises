@@ -6,7 +6,7 @@
 
 void TestVector()
 {
-	TEST("Vector test");
+	TEST("Test Vector");
 	Vector<std::string> vector;
 	ASSERT(vector.Count() == 0, "Construct and empty vector of strings");
 	vector.Add("first");
