@@ -2,6 +2,176 @@
 #include <memory>
 #include "Utils/Assert.h"
 
+namespace BinaryNodes
+{
+/*
+Node is assumed to have at least
+struct Node
+{
+	NodePtr parent;
+	NodePtr left;
+	NodePtr right;
+
+	Value& operator*()
+	NodePtr clone() const;
+};
+*/
+
+template <typename NodePtr>
+NodePtr LeftMostLeaf(NodePtr root)
+{
+	NodePtr it = root;
+	while (it && it->left)
+	{
+		it = it->left;
+	}
+	return it;
+}
+
+template <typename NodePtr>
+NodePtr RightMostLeaf(NodePtr root)
+{
+	NodePtr it = root;
+	while (it && it->right)
+	{
+		it = it->right;
+	}
+	return it;
+}
+
+template <typename NodePtr>
+NodePtr Predecessor(NodePtr root)
+{
+	if (!root)
+	{
+		return root;
+	}
+	if (root->left)
+	{
+		return RightMostLeaf(root->left);
+	}
+	NodePtr parent = root->parent;
+	NodePtr child = root;
+	while (parent && parent->left == child)
+	{
+		child = parent;
+		parent = parent->parent;
+	}
+	return parent;
+}
+
+template <typename NodePtr>
+NodePtr Successor(NodePtr root)
+{
+	if (!root)
+	{
+		return root;
+	}
+	if (root->right)
+	{
+		return LeftMostLeaf(root->right);
+	}
+	NodePtr parent = root->parent;
+	NodePtr child = root;
+	while (parent && parent->right == child)
+	{
+		child = parent;
+		parent = parent->parent;
+	}
+	return parent;
+}
+
+template <typename NodePtr>
+NodePtr CloneTree(NodePtr root)
+{
+	if (!root)
+	{
+		return root;
+	}
+	NodePtr copyRoot = root->clone();
+	NodePtr orig = root;
+	NodePtr copy = copyRoot;
+	while (copy)
+	{
+		if (orig->left && !copy->left)
+		{
+			copy->left = orig->left->clone();
+			copy->left->parent = copy;
+			copy = copy->left;
+			orig = orig->left;
+		}
+		else if (orig->right && !copy->right)
+		{
+			copy->right = orig->right->clone();
+			copy->right->parent = copy;
+			copy = copy->right;
+			orig = orig->right;
+		}
+		else
+		{
+			copy = copy->parent;
+			orig = orig->parent;
+		}
+	}
+	return copyRoot;
+}
+
+// Assumes Node has Value& operator*()
+template <typename NodePtr, typename Value>
+NodePtr BinarySearch(NodePtr root, Value const& v)
+{
+	NodePtr it = root;
+	while (it && **it != v)
+	{
+		it = v < **it ? it->left : it->right;
+	}
+	return it;
+}
+
+template <typename NodePtr, typename Value>
+struct NodeIterator
+{
+	using iterator_category = std::bidirectional_iterator_tag;
+	using difference_type = std::ptrdiff_t;
+	using value_type = Value;
+	using pointer = Value*;
+	using reference = Value&;
+
+	NodeIterator() = default;
+	NodeIterator(NodePtr ptr) : m_ptr(ptr) {}
+
+	operator bool() const { return !!m_ptr; }
+	
+	pointer operator->() { return m_ptr->operator->()(); }
+	reference operator*() { return **m_ptr; }
+
+	NodeIterator& operator++() { m_ptr = Successor(m_ptr); return *this; }
+	NodeIterator& operator--() { m_ptr = Predecessor(m_ptr); return *this; }
+
+	NodeIterator operator++(int)
+	{
+		NodeIterator const old = *this; 
+		this->operator++();
+		return old;
+	}
+
+	NodeIterator operator--(int)
+	{
+		NodeIterator const old = *this;
+		this->operator--();
+		return old;
+	}
+
+	NodePtr GetPtr() const { return m_ptr; }
+
+private:
+	NodePtr m_ptr;
+};
+
+}
+
+namespace Nodes 
+{
 template <typename T>
 struct BinaryNode;
 
@@ -245,3 +415,19 @@ struct BinaryNodeIterator
 private:
 	BinaryNode<T>* m_ptr = nullptr;
 };
+
+template <typename T>
+BinaryNodeIterator<T> BinarySearch(BinaryNode<T> const* const root, T const& v)
+{
+	BinaryNode<T>* it = const_cast<BinaryNode<T>*>(root);
+	while (it)
+	{
+		if (it->key == v)
+		{
+			break;
+		}
+		it = v < it->key ? it->left.get() : it->right.get();
+	}
+	return { it };
+}
+} // namespace Nodes

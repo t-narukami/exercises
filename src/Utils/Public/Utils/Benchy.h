@@ -33,7 +33,7 @@ public:
 	Stopwatch& operator=(Stopwatch const&) = delete;
 
 	Stopwatch(Report& report, std::string const& name);
-	Stopwatch(Stopwatch&&);
+	Stopwatch(Stopwatch&&) noexcept;
 
 	~Stopwatch();
 private:

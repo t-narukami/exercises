@@ -1,25 +1,21 @@
 #pragma once
-#include <memory>
 #include "TreesCommon.h"
+#include "MemPool.h"
 
-template <typename T>
+template <typename T, typename Allocator>
 class BST
 {
 public:
-	BST() = default;
-
+	BST(Allocator& allocator) : m_allocator(allocator) {}
 	~BST() = default;
 
 	BST(BST const& rhs);
-
 	BST(BST&& rhs) noexcept;
 
 	BST& operator=(BST rhs);
-
 	BST& operator=(BST&& rhs) noexcept;
 
 	BST copy() const noexcept;
-
 	void swap(BST&& rhs) noexcept;
 
 	template <typename ...Args>
@@ -32,123 +28,136 @@ public:
 	int Count() const { return m_count; }
 
 public:
-	using Iterator = BinaryNodeIterator<T>;
+	struct Node;
+	using NodeHandle = Allocator::Handle<Node>;
 
-	Iterator Find(T const& v);
+	using Iterator = BinaryNodes::NodeIterator<NodeHandle, T>;
+	using ConstIterator = BinaryNodes::NodeIterator<NodeHandle, const T>;
+
+	Iterator Find(T const& v) { return BinaryNodes::BinarySearch(m_root, v); }
+	ConstIterator Find(T const& v) const { return BinaryNodes::BinarySearch(m_root, v); }
 
 	void Erase(T const& v);
 	void Erase(Iterator const& it);
 
-	Iterator begin() const { return { LeftMostLeaf(m_root.get()) }; }
-	Iterator end() const { return { nullptr }; }
+	ConstIterator begin() const { return { BinaryNodes::LeftMostLeaf(m_root) }; }
+	ConstIterator end() const { return { {} }; }
 
-	Iterator begin() { return { LeftMostLeaf(m_root.get()) }; }
-	Iterator end() { return { nullptr }; }
+	Iterator begin() { return { BinaryNodes::LeftMostLeaf(m_root) }; }
+	Iterator end() { return { {} }; }
 
 private:
 	void InsertNode(T&& value);
 
-	BinaryNodeHandle<T> m_root;
+	struct Node
+	{
+		NodeHandle parent;
+		NodeHandle left;
+		NodeHandle right;
+		T value;
+
+		Node(T const& v) : value(v) {}
+		Node(T&& v) : value(std::move(v)) {}
+
+		NodeHandle clone() const { return m_allocator.Make<Node>(*this); } // TODO
+
+		T* operator->() { return &value; }
+		T& operator*() { return value; }
+		T const* operator->() const { return &value; }
+		T const& operator*() const { return value; }
+	};
+
+	NodeHandle m_root;
 	int m_count = 0;
+	Allocator& m_allocator;
 };
 
-template <typename T>
-void BST<T>::swap(BST<T>&& rhs) noexcept
+template <typename T, typename Allocator>
+void BST<T, Allocator>::swap(BST<T, Allocator>&& rhs) noexcept
 {
 	std::swap(m_root, rhs.m_root);
 	std::swap(m_count, rhs.m_count);
+	m_allocator = rhs.m_allocator;
 }
 
-template <typename T>
-BST<T> BST<T>::copy() const noexcept
+template <typename T, typename Allocator>
+BST<T, Allocator> BST<T, Allocator>::copy() const noexcept
 {
-	BST<T> res;
+	BST<T, Allocator> res;
 	res.m_count = m_count;
-	res.m_root = Clone(m_root);
+	res.m_root = BinaryNodes::CloneTree(m_root);
+	res.m_allocator = m_allocator;
 	return res;
 }
 
-template <typename T>
-BST<T>::BST(BST const& rhs)
+template <typename T, typename Allocator>
+BST<T, Allocator>::BST(BST const& rhs)
 {
 	swap(rhs.copy());
 }
 
-template <typename T>
-BST<T>::BST(BST&& rhs) noexcept
+template <typename T, typename Allocator>
+BST<T, Allocator>::BST(BST&& rhs) noexcept
 {
 	swap(std::move(rhs));
 }
 
-template <typename T>
-BST<T>& BST<T>::operator=(BST rhs)
-{
-	swap(std::move(rhs));
-	return *this;
-}
-
-template <typename T>
-BST<T>& BST<T>::operator=(BST&& rhs) noexcept
+template <typename T, typename Allocator>
+BST<T, Allocator>& BST<T, Allocator>::operator=(BST rhs)
 {
 	swap(std::move(rhs));
 	return *this;
 }
 
-template <typename T>
-void BST<T>::Add(T const& value)
+template <typename T, typename Allocator>
+BST<T, Allocator>& BST<T, Allocator>::operator=(BST&& rhs) noexcept
+{
+	swap(std::move(rhs));
+	return *this;
+}
+
+template <typename T, typename Allocator>
+void BST<T, Allocator>::Add(T const& value)
 {
 	T copy = value;
 	InsertNode(std::move(copy));
 }
 
-template <typename T>
-void BST<T>::Add(T&& value)
+template <typename T, typename Allocator>
+void BST<T, Allocator>::Add(T&& value)
 {
 	InsertNode(std::move(value));
 }
 
-template <typename T>
+template <typename T, typename Allocator>
 template <typename ...Args>
-void BST<T>::Emplace(Args&& ...args)
+void BST<T, Allocator>::Emplace(Args&& ...args)
 {
 	InsertNode({ std::forward<Args>(args)... });
 }
 
-template <typename T>
-void BST<T>::InsertNode(T&& value)
+template <typename T, typename Allocator>
+void BST<T, Allocator>::InsertNode(T&& value)
 {
-	BinaryNode<T>* parent = nullptr;
-	BinaryNodeHandle<T>* it = &m_root;
+	NodeHandle parent;
+	NodeHandle* it = &m_root;
 	while (*it)
 	{
-		parent = it->get();
-		it = value < (*it)->key ? &(*it)->left : &(*it)->right;
+		parent = *it;
+		it = value < *it ? &(*it)->left : &(*it)->right;
 	}
-	*it = MakeBinaryNode<T>(std::move(value));
+	*it = m_allocator.Make<Node>(std::move(value)); // TODO
 	(*it)->parent = parent;
 	++m_count;
 }
 
-template <typename T>
-typename BST<T>::Iterator BST<T>::Find(T const& v)
+template <typename T, typename Allocator>
+void BST<T, Allocator>::Erase(Iterator const& it)
 {
-	BinaryNode<T>* it = m_root.get();
-	while (it)
-	{
-		if (it->key == v)
-		{
-			break;
-		}
-		it = v < it->key ? it->left.get() : it->right.get();
-	}
-	return { it };
-}
-
-template <typename T>
-void BST<T>::Erase(Iterator const& it)
-{
+	using namespace Nodes;
 	MY_ASSERT(it, "Erasing invalid iterator");
 
+	/*
 	BinaryNodeHandle<T>* ptr = GetLeafHandle(it.GetPtr());
 	if (!ptr)
 	{
@@ -184,10 +193,11 @@ void BST<T>::Erase(Iterator const& it)
 		BinaryNode<T>* parent = (*ptr)->parent;
 		*ptr = nullptr;
 	}
+	*/
 }
 
-template <typename T>
-void BST<T>::Erase(T const& v)
+template <typename T, typename Allocator>
+void BST<T, Allocator>::Erase(T const& v)
 {
 	while (auto it = Find(v))
 	{

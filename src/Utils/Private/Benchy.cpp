@@ -55,7 +55,7 @@ Stopwatch::Stopwatch(Report& report, std::string const& name)
 {
 }
 
-Stopwatch::Stopwatch(Stopwatch&& rhs)
+Stopwatch::Stopwatch(Stopwatch&& rhs) noexcept
 	: m_report(rhs.m_report)
 	, m_name(std::move(rhs.m_name))
 	, m_start(std::move(rhs.m_start))
