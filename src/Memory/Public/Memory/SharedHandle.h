@@ -43,12 +43,12 @@ public:
 
 	SharedHandle(SharedHandle&& other) noexcept
 	{
-		this->Swap(other);
+		this->Swap(std::move(other));
 	}
 
 	SharedHandle& operator=(SharedHandle&& other) noexcept
 	{
-		this->Swap(other);
+		this->Swap(std::move(other));
 		return *this;
 	}
 
@@ -132,7 +132,7 @@ template <typename T, typename ...Args>
 SharedHandle<T> MakeShared(Args&& ...args)
 {
 	const uint64_t dataPtrOffset = sizeof(SharedHandle<T>::RefCounter);
-	MemDesc desc = Allocate(sizeof(T) + dataPtrOffset);
+	MemDesc desc = ALLOCATE(sizeof(T) + dataPtrOffset);
 	MY_ASSERT(desc.ptr, "Failed to allocate memory");
 
 	void* dataPtr = new (reinterpret_cast<uint8_t*>(desc.ptr) + dataPtrOffset) T(std::forward<Args>(args)...);

@@ -3,6 +3,7 @@
 
 #include "Vector.h"
 #include "BST.h"
+#include "BSTv1.h"
 
 void TestVector()
 {
@@ -163,6 +164,7 @@ void TestBST(std::string const& testName = "Test Binary Search Tree")
 		}
 		ASSERT(i == sampleCount + 1, "Correct number of elements are iterated");
 	}
+
 	{
 		T<V> tree;
 		FillTree(tree);
@@ -227,4 +229,5 @@ void TestDataStructures()
 	TestVector();
 	TestBST<BST, int>("Test BST<int>");
 	TestBST<BST, double>("Test BST<double>");
+	TestBST<BSTv1, int>("Test BSTv1<int>");
 }

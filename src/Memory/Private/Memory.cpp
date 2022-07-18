@@ -1,5 +1,6 @@
 #include "Memory.h"
 #include "Allocators.h"
+#include <iostream>
 
 namespace Memory
 {
@@ -8,9 +9,9 @@ namespace Private
 	using GlobalAllocatorType = 
 		FallbackAllocator<
 			SegregatorAllocator<
-				StackAllocator<1_mB>,
+				StackAllocator<16_mB>,
 				HeapAllocator<1_gB>,
-				64
+				128
 			>,
 			MallocAllocator
 		>;
@@ -20,6 +21,9 @@ namespace Private
 		static GlobalAllocatorType globalAllocator;
 		return globalAllocator;
 	}
+
+	AllocInfo FirstAllocInfo;
+	AllocInfo* NextAllocInfo = &FirstAllocInfo;
 } // namespace Private
 
 MemDesc Allocate(uint64_t sizeInBytes)
@@ -30,6 +34,16 @@ MemDesc Allocate(uint64_t sizeInBytes)
 void Deallocate(MemDesc descriptor)
 {
 	Private::GetGlobalAllocator().Deallocate(descriptor);
+}
+
+void DumpAllocInfo()
+{
+	Private::AllocInfo* it = Private::FirstAllocInfo.next;
+	while (it)
+	{
+		std::cout << it->filename << ":" << it->line << " " << it->function << "(): " << it->count << " allocations (" << it->totalBytes << " bytes)" << std::endl;
+		it = it->next;
+	}
 }
 
 } // namespace Memory
