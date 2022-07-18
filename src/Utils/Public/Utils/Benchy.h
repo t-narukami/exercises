@@ -1,6 +1,6 @@
 #pragma once
 #include <string>
-#include <vector>
+#include <unordered_map>
 
 // Benchmarks
 namespace Benchy
@@ -21,9 +21,14 @@ public:
 
 private:
 	std::string m_name = "Some benchmark";
-	std::vector<std::string> m_benchmarks;
-};
 
+	struct Stats
+	{
+		uint64_t count = 0;
+		uint64_t total = 0;
+	};
+	std::unordered_map<std::string, Stats> m_benchmarks;
+};
 
 class Stopwatch
 {

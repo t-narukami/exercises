@@ -31,21 +31,21 @@ Report::~Report()
 
 void Report::AddBenchmark(std::string const& name, uint64_t cyclesElapsed)
 {
-	std::ostringstream scientificNotation;
-	scientificNotation << std::setw(2) << std::scientific << static_cast<double>(cyclesElapsed);
-
-	std::string const benchmark = name + ":\n\t" + std::to_string(cyclesElapsed) + " (" + scientificNotation.str() + ") CPU Cycles";
-	m_benchmarks.push_back(benchmark);
+	m_benchmarks[name].total += cyclesElapsed;
+	++m_benchmarks[name].count;
 }
 
 std::string Report::GetReport() const
 {
-	std::string report = m_name + "\n";
-	for (std::string const& benchmark : m_benchmarks)
+	std::ostringstream report;
+	report << m_name << "\n";
+
+	for (auto const& p : m_benchmarks)
 	{
-		report.append(benchmark + "\n");
+		double const cyclesMean = p.second.total / static_cast<double>(p.second.count);
+		report << p.first << ":\n\tMean of " << p.second.count << " runs: " << static_cast<uint64_t>(cyclesMean) << " (" << std::scientific << cyclesMean << ") CPU Cycles\n";
 	}
-	return report;
+	return report.str();
 }
 
 Stopwatch::Stopwatch(Report& report, std::string const& name)

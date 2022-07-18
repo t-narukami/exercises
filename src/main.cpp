@@ -13,9 +13,11 @@ void RunTests();
 
 int main()
 {
+	// Trigger memory allocation
+	Memory::Deallocate(Memory::Allocate(1));
+
 	//RunTests();
 	RunBenchmarks();
-
 
 	Memory::DumpAllocInfo();
 	return 0;
@@ -31,32 +33,35 @@ template <template <typename> class T, typename V>
 void BenchBST(std::string const& name)
 {
 	Benchy::Report report(name);
-	T<V> tree;
 	int const modulo = 1000000;
-	int const count = 1000000;
+	int const count = 2000000;
+	for (int i = 0; i < 10; ++i)
 	{
-		Benchy::Stopwatch sw(report, "Adding 1 million random elements");
-		for (int i = 0; i < count; ++i)
+		T<V> tree;
 		{
-			tree.Add({ static_cast<V>(rand() % modulo) });
+			Benchy::Stopwatch sw(report, "Adding 1 million random elements");
+			for (int i = 0; i < count; ++i)
+			{
+				tree.Add({ static_cast<V>(rand() % modulo) });
+			}
 		}
-	}
-	{
-		Benchy::Stopwatch sw(report, "Looking up random element from 1 million elements");
-		tree.Find({ static_cast<V>(rand() % modulo) });
-	}
-	{
-		T<V> copy;
 		{
-			Benchy::Stopwatch sw(report, "Copying 1 million elements tree");
-			copy = tree;
+			Benchy::Stopwatch sw(report, "Looking up random element from 1 million elements");
+			tree.Find({ static_cast<V>(rand() % modulo) });
 		}
-	}
-	{
-		Benchy::Stopwatch sw(report, "Erasing 1 million elements");
-		for (int i = 0; i < count; ++i)
 		{
-			tree.Erase({ static_cast<V>(i) });
+			T<V> copy;
+			{
+				Benchy::Stopwatch sw(report, "Copying 1 million elements tree");
+				copy = tree;
+			}
+		}
+		{
+			Benchy::Stopwatch sw(report, "Erasing 1 million elements");
+			for (int i = 0; i < count; ++i)
+			{
+				tree.Erase({ static_cast<V>(i) });
+			}
 		}
 	}
 }
