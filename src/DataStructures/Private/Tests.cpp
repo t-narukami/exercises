@@ -225,6 +225,6 @@ void TestBST(std::string const& testName = "Test Binary Search Tree")
 void TestDataStructures()
 {
 	TestVector();
-	TestBST<BST, int>();
-	TestBST<BST, double>();
+	TestBST<BST, int>("Test BST<int>");
+	TestBST<BST, double>("Test BST<double>");
 }

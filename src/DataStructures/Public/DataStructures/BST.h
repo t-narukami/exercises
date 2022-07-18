@@ -1,12 +1,12 @@
 #pragma once
 #include "TreesCommon.h"
-#include "MemPool.h"
+#include <memory>
 
-template <typename T, typename Allocator>
+template <typename T>
 class BST
 {
 public:
-	BST(Allocator& allocator) : m_allocator(allocator) {}
+	BST() = default;
 	~BST() = default;
 
 	BST(BST const& rhs);
@@ -29,7 +29,7 @@ public:
 
 public:
 	struct Node;
-	using NodeHandle = Allocator::Handle<Node>;
+	using NodeHandle = std::shared_ptr<Node>;
 
 	using Iterator = BinaryNodes::NodeIterator<NodeHandle, T>;
 	using ConstIterator = BinaryNodes::NodeIterator<NodeHandle, const T>;
@@ -59,7 +59,10 @@ private:
 		Node(T const& v) : value(v) {}
 		Node(T&& v) : value(std::move(v)) {}
 
-		NodeHandle clone() const { return m_allocator.Make<Node>(*this); } // TODO
+		NodeHandle clone() const 
+		{
+			return std::make_shared<Node>(value);
+		}
 
 		T* operator->() { return &value; }
 		T& operator*() { return value; }
@@ -69,135 +72,132 @@ private:
 
 	NodeHandle m_root;
 	int m_count = 0;
-	Allocator& m_allocator;
 };
 
-template <typename T, typename Allocator>
-void BST<T, Allocator>::swap(BST<T, Allocator>&& rhs) noexcept
+template <typename T>
+void BST<T>::swap(BST<T>&& rhs) noexcept
 {
 	std::swap(m_root, rhs.m_root);
 	std::swap(m_count, rhs.m_count);
-	m_allocator = rhs.m_allocator;
 }
 
-template <typename T, typename Allocator>
-BST<T, Allocator> BST<T, Allocator>::copy() const noexcept
+template <typename T>
+BST<T> BST<T>::copy() const noexcept
 {
-	BST<T, Allocator> res;
+	BST<T> res;
 	res.m_count = m_count;
 	res.m_root = BinaryNodes::CloneTree(m_root);
-	res.m_allocator = m_allocator;
 	return res;
 }
 
-template <typename T, typename Allocator>
-BST<T, Allocator>::BST(BST const& rhs)
+template <typename T>
+BST<T>::BST(BST const& rhs)
 {
 	swap(rhs.copy());
 }
 
-template <typename T, typename Allocator>
-BST<T, Allocator>::BST(BST&& rhs) noexcept
+template <typename T>
+BST<T>::BST(BST&& rhs) noexcept
 {
 	swap(std::move(rhs));
 }
 
-template <typename T, typename Allocator>
-BST<T, Allocator>& BST<T, Allocator>::operator=(BST rhs)
-{
-	swap(std::move(rhs));
-	return *this;
-}
-
-template <typename T, typename Allocator>
-BST<T, Allocator>& BST<T, Allocator>::operator=(BST&& rhs) noexcept
+template <typename T>
+BST<T>& BST<T>::operator=(BST rhs)
 {
 	swap(std::move(rhs));
 	return *this;
 }
 
-template <typename T, typename Allocator>
-void BST<T, Allocator>::Add(T const& value)
+template <typename T>
+BST<T>& BST<T>::operator=(BST&& rhs) noexcept
+{
+	swap(std::move(rhs));
+	return *this;
+}
+
+template <typename T>
+void BST<T>::Add(T const& value)
 {
 	T copy = value;
 	InsertNode(std::move(copy));
 }
 
-template <typename T, typename Allocator>
-void BST<T, Allocator>::Add(T&& value)
+template <typename T>
+void BST<T>::Add(T&& value)
 {
 	InsertNode(std::move(value));
 }
 
-template <typename T, typename Allocator>
+template <typename T>
 template <typename ...Args>
-void BST<T, Allocator>::Emplace(Args&& ...args)
+void BST<T>::Emplace(Args&& ...args)
 {
 	InsertNode({ std::forward<Args>(args)... });
 }
 
-template <typename T, typename Allocator>
-void BST<T, Allocator>::InsertNode(T&& value)
+template <typename T>
+void BST<T>::InsertNode(T&& value)
 {
 	NodeHandle parent;
 	NodeHandle* it = &m_root;
 	while (*it)
 	{
 		parent = *it;
-		it = value < *it ? &(*it)->left : &(*it)->right;
+		it = value < ***it ? &(*it)->left : &(*it)->right;
 	}
-	*it = m_allocator.Make<Node>(std::move(value)); // TODO
+	*it = std::make_shared<Node>(std::move(value));
 	(*it)->parent = parent;
 	++m_count;
 }
 
-template <typename T, typename Allocator>
-void BST<T, Allocator>::Erase(Iterator const& it)
+template <typename T>
+void BST<T>::Erase(Iterator const& it)
 {
 	using namespace Nodes;
 	MY_ASSERT(it, "Erasing invalid iterator");
 
-	/*
-	BinaryNodeHandle<T>* ptr = GetLeafHandle(it.GetPtr());
-	if (!ptr)
-	{
-		ptr = &m_root;
-	}
-	BinaryNodeHandle<T>* left = &(*ptr)->left;
-	BinaryNodeHandle<T>* right = &(*ptr)->right;
+	Node& node = *it.GetPtr();
+	NodeHandle* nodePtr = node.parent ? node.parent->left == it.GetPtr() ? &node.parent->left : &node.parent->right : &m_root;
+	NodeHandle* left = &(*nodePtr)->left;
+	NodeHandle* right = &(*nodePtr)->right;
 
-	--m_count;
 	if (*left && *right)
 	{
 		// Find and detach predecessor
-		BinaryNodeHandle<T> predecessor = std::move(*RightMostLeaf(left));
+		NodeHandle predecessor = std::move(BinaryNodes::RightMostLeaf(*left));
 		// Move leaves from ptr to predecessor
-		SetRightLeaf(predecessor.get(), std::move(*right));
-		SetLeftLeaf(predecessor.get(), std::move(*left));
+		if (predecessor->right = std::move(*right))
+		{
+			predecessor->right->parent = predecessor;
+		}
+		if (predecessor->left = std::move(*left))
+		{
+			predecessor->left->parent = predecessor;
+		}
 		// Attach predecessor to ptr's parrent
-		predecessor->parent = (*ptr)->parent;
-		*ptr = std::move(predecessor);
+		predecessor->parent = (*nodePtr)->parent;
+		*nodePtr = std::move(predecessor);
 	}
 	else if (*left)
 	{
-		(*left)->parent = (*ptr)->parent;
-		*ptr = std::move(*left);
+		(*left)->parent = (*nodePtr)->parent;
+		*nodePtr = std::move(*left);
 	}
 	else if (*right)
 	{
-		(*right)->parent = (*ptr)->parent;
-		*ptr = std::move(*right);
+		(*right)->parent = (*nodePtr)->parent;
+		*nodePtr = std::move(*right);
 	}
 	else
 	{
-		BinaryNode<T>* parent = (*ptr)->parent;
-		*ptr = nullptr;
+		*nodePtr = nullptr;
 	}
-	*/
+	--m_count;
 }
 
-template <typename T, typename Allocator>
-void BST<T, Allocator>::Erase(T const& v)
+template <typename T>
+void BST<T>::Erase(T const& v)
 {
 	while (auto it = Find(v))
 	{

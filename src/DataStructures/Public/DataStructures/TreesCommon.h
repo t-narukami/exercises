@@ -168,7 +168,7 @@ private:
 	NodePtr m_ptr;
 };
 
-}
+} // namespace BinaryNodes
 
 namespace Nodes 
 {
