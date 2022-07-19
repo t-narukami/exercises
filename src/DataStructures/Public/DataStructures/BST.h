@@ -93,7 +93,7 @@ BST<T> BST<T>::copy() const noexcept
 template <typename T>
 BST<T>::BST(BST const& rhs)
 {
-	swap(rhs.copy());
+	swap(std::move(rhs.copy()));
 }
 
 template <typename T>
@@ -157,8 +157,8 @@ void BST<T>::Erase(Iterator const& it)
 	using namespace Nodes;
 	MY_ASSERT(it, "Erasing invalid iterator");
 
-	Node& node = *it.GetPtr();
-	NodeHandle* nodePtr = node.parent ? node.parent->left == it.GetPtr() ? &node.parent->left : &node.parent->right : &m_root;
+	NodeHandle node = it.GetPtr();
+	NodeHandle* nodePtr = node->parent ? node->parent->left == it.GetPtr() ? &node->parent->left : &node->parent->right : &m_root;
 	NodeHandle* left = &(*nodePtr)->left;
 	NodeHandle* right = &(*nodePtr)->right;
 

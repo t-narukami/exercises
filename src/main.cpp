@@ -1,5 +1,6 @@
 #include <iostream>
 #include <string>
+#include <random>
 
 #include "DataStructures/Tests.h"
 #include "Memory/Tests.h"
@@ -16,10 +17,11 @@ int main()
 	// Trigger memory allocation
 	Memory::Deallocate(Memory::Allocate(1));
 
-	//RunTests();
-	RunBenchmarks();
+	RunTests();
+	//RunBenchmarks();
 
 	Memory::DumpAllocInfo();
+	Memory::DumpAllocStats();
 	return 0;
 }
 
@@ -30,11 +32,14 @@ void RunTests()
 }
 
 template <template <typename> class T, typename V>
-void BenchBST(std::string const& name)
+void BenchBST(std::string const& name, std::random_device& rd)
 {
 	Benchy::Report report(name);
 	int const modulo = 1000000;
-	int const count = 2000000;
+	int const count = 1000000;
+	std::mt19937 gen(rd());
+	std::uniform_int_distribution<> dist(0, modulo);
+
 	for (int i = 0; i < 10; ++i)
 	{
 		T<V> tree;
@@ -42,12 +47,12 @@ void BenchBST(std::string const& name)
 			Benchy::Stopwatch sw(report, "Adding 1 million random elements");
 			for (int i = 0; i < count; ++i)
 			{
-				tree.Add({ static_cast<V>(rand() % modulo) });
+				tree.Add({ static_cast<V>(dist(gen)) });
 			}
 		}
 		{
 			Benchy::Stopwatch sw(report, "Looking up random element from 1 million elements");
-			tree.Find({ static_cast<V>(rand() % modulo) });
+			tree.Find({ static_cast<V>(dist(gen)) });
 		}
 		{
 			T<V> copy;
@@ -68,6 +73,7 @@ void BenchBST(std::string const& name)
 
 void RunBenchmarks()
 {
-	BenchBST<BST, int>("Bench BST<int>");
-	BenchBST<BSTv1, int>("Bench BSTv1<int>");
+	std::random_device rd;
+	BenchBST<BST, int>("Bench BST<int>", rd);
+	BenchBST<BSTv1, int>("Bench BSTv1<int>", rd);
 }

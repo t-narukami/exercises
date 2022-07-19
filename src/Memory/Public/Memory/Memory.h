@@ -23,7 +23,7 @@ namespace Private
 	extern AllocInfo* NextAllocInfo;
 } // namespace Private
 
-#define __ENABLE_ALLOCINFO
+//#define __ENABLE_ALLOCINFO
 
 #ifdef __ENABLE_ALLOCINFO
 
@@ -54,5 +54,7 @@ MemDesc Allocate(uint64_t sizeInBytes);
 void Deallocate(MemDesc descriptor);
 
 void DumpAllocInfo();
+
+void DumpAllocStats();
 
 } // namespace Memory

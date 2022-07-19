@@ -111,15 +111,15 @@ private:
 		m_refCounter = nullptr;
 	}
 
-	T* Get() 
+	inline T* Get() 
 	{
-		MY_ASSERT(IsValid(), "Dereferencing invalid SharedHandle");
+		//MY_ASSERT(IsValid(), "Dereferencing invalid SharedHandle");
 		return reinterpret_cast<T*>(m_dataPtr);
 	}
 
-	T const* Get() const 
+	inline T const* Get() const 
 	{
-		MY_ASSERT(IsValid(), "Dereferencing invalid SharedHandle");
+		//MY_ASSERT(IsValid(), "Dereferencing invalid SharedHandle");
 		return reinterpret_cast<T const*>(m_dataPtr); 
 	}
 

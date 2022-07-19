@@ -140,15 +140,25 @@ void BSTv1<T>::Emplace(Args&& ...args)
 template <typename T>
 void BSTv1<T>::InsertNode(T&& value)
 {
-	NodeHandle parent;
+	NodeHandle* parent = nullptr;
 	NodeHandle* it = &m_root;
 	while (*it)
 	{
-		parent = *it;
-		it = value < ***it ? &(*it)->left : &(*it)->right;
+		parent = it;
+		if (value < ***it)
+		{
+			it = &(*it)->left;
+		}
+		else
+		{
+			it = &(*it)->right;
+		}
 	}
 	*it = Memory::MakeShared<Node>(std::move(value));
-	(*it)->parent = parent;
+	if (parent)
+	{
+		(*it)->parent = *parent;
+	}
 	++m_count;
 }
 
