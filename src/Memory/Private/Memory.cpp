@@ -8,12 +8,11 @@ namespace Private
 {
 	using GlobalAllocatorType = 
 		FallbackAllocator<
-			SegregatorAllocator<
-				FreelistAllocator<StackAllocator<16_mB>, 112>,
-				FreelistAllocator<HeapAllocator<1_gB>, 112>,
-				128
-			>,
-			MallocAllocator
+			FreelistAllocator<StackAllocator<16_mB>, 48>,
+			FallbackAllocator<
+				FreelistAllocator<HeapAllocator<512_mB>, 48>,
+				MallocAllocator
+			>
 		>;
 
 	static GlobalAllocatorType& GetGlobalAllocator()
@@ -38,6 +37,7 @@ void Deallocate(MemDesc descriptor)
 
 void DumpAllocInfo()
 {
+	std::cout << "\nMEMORY ALLOCATION STATISTICS" << std::endl;
 	Private::AllocInfo* it = Private::FirstAllocInfo.next;
 	while (it)
 	{
@@ -51,7 +51,7 @@ static inline uint64_t ToMB(uint64_t bytes)
 	return static_cast<uint64_t>(bytes / (1024. * 1024.));
 }
 
-static void PrintStats(Private::AllocatorStatsReportPtr const& ptr, int depth, uint64_t& totalAlloc, uint64_t& totalDealloc)
+static void PrintAllocatorMemoryUsage(Private::AllocatorStatsReportPtr const& ptr, int depth, uint64_t& totalAlloc, uint64_t& totalDealloc)
 {
 	using namespace std;
 	auto const tabs = [] (int tabs) 
@@ -77,21 +77,21 @@ static void PrintStats(Private::AllocatorStatsReportPtr const& ptr, int depth, u
 	}
 	for (auto const& nested : ptr->nested)
 	{
-		PrintStats(nested, depth + 1, totalAlloc, totalDealloc);
+		PrintAllocatorMemoryUsage(nested, depth + 1, totalAlloc, totalDealloc);
 	}
 	tabs(depth); cout << "}" << endl;
 }
 
-void DumpAllocStats()
+void DumpMemoryUsage()
 {
 	Private::AllocatorStatsReportPtr report = std::move(Private::GetGlobalAllocator().GetStats());
-	std::cout << "\nALLOCATION STATISTICS" << std::endl;
+	std::cout << "\nMEMORY USAGE STATISTICS" << std::endl;
 	uint64_t aTotal = 0;
 	uint64_t dTotal = 0;
-	PrintStats(report, 0, aTotal, dTotal);
+	PrintAllocatorMemoryUsage(report, 0, aTotal, dTotal);
 	std::cout << "Total allocated memory:   " << aTotal <<" bytes (" << ToMB(aTotal) << " Mb)" << std::endl;
 	std::cout << "Total deallocated memory: " << dTotal <<" bytes (" << ToMB(dTotal) << " Mb)" << std::endl;
-	std::cout << "Difference: " << aTotal - dTotal << " bytes" << std::endl;
+	std::cout << "Memory leaked: " << aTotal - dTotal << " bytes" << std::endl;
 }
 
 } // namespace Memory

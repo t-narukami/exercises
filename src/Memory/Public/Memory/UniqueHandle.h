@@ -10,6 +10,7 @@ class UniqueHandle
 {
 public:
 	UniqueHandle() = default;
+	UniqueHandle(nullptr_t) {};
 	UniqueHandle(UniqueHandle const&) = delete;
 	UniqueHandle& operator=(UniqueHandle const&) = delete;
 

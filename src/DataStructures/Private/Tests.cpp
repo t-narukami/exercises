@@ -134,7 +134,7 @@ void TestBST(std::string const& testName = "Test Binary Search Tree")
 		tree.Erase(tree.Find(value));
 		ASSERT(tree.Count() == 2, "Element erased by iterator doesn't affect duplicates");
 		tree.Erase(value);
-		ASSERT(tree.Count() == 0, "All occuances are erased by value");
+		ASSERT(tree.Count() == 0, "All occurences are erased by value");
 	}
 	{
 		T<V> tree;

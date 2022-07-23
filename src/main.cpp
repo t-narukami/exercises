@@ -8,6 +8,7 @@
 #include "DataStructures/BST.h"
 #include "DataStructures/BSTv1.h"
 #include "Utils/Benchy.h"
+#include "Memory/Memory.h"
 
 void RunBenchmarks();
 void RunTests();
@@ -15,13 +16,13 @@ void RunTests();
 int main()
 {
 	// Trigger memory allocation
-	Memory::Deallocate(Memory::Allocate(1));
+	//Memory::Deallocate(Memory::Allocate(1));
 
 	RunTests();
 	//RunBenchmarks();
 
 	Memory::DumpAllocInfo();
-	Memory::DumpAllocStats();
+	Memory::DumpMemoryUsage();
 	return 0;
 }
 

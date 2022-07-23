@@ -55,6 +55,6 @@ void Deallocate(MemDesc descriptor);
 
 void DumpAllocInfo();
 
-void DumpAllocStats();
+void DumpMemoryUsage();
 
 } // namespace Memory

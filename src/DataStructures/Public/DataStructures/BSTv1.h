@@ -1,14 +1,19 @@
 #pragma once
 #include "TreesCommon.h"
 #include "Memory/Memory.h"
-#include "Memory/SharedHandle.h"
 
 template <typename T>
 class BSTv1
 {
 public:
 	BSTv1() = default;
-	~BSTv1() = default;
+	~BSTv1()
+	{
+		if (m_root)
+		{
+			m_root->~Node();
+		}
+	}
 
 	BSTv1(BSTv1 const& rhs);
 	BSTv1(BSTv1&& rhs) noexcept;
@@ -30,10 +35,8 @@ public:
 
 public:
 	struct Node;
-	using NodeHandle = Memory::SharedHandle<Node>;
-
-	using Iterator = BinaryNodes::NodeIterator<NodeHandle, T>;
-	using ConstIterator = BinaryNodes::NodeIterator<NodeHandle, const T>;
+	using Iterator = BinaryNodes::NodeIterator<Node*, T>;
+	using ConstIterator = BinaryNodes::NodeIterator<Node*, const T>;
 
 	Iterator Find(T const& v) { return BinaryNodes::BinarySearch(m_root, v); }
 	ConstIterator Find(T const& v) const { return BinaryNodes::BinarySearch(m_root, v); }
@@ -42,37 +45,54 @@ public:
 	void Erase(Iterator const& it);
 
 	ConstIterator begin() const { return { BinaryNodes::LeftMostLeaf(m_root) }; }
-	ConstIterator end() const { return { {} }; }
+	ConstIterator end() const { return { nullptr }; }
 
 	Iterator begin() { return { BinaryNodes::LeftMostLeaf(m_root) }; }
-	Iterator end() { return { {} }; }
+	Iterator end() { return { nullptr }; }
 
 private:
 	void InsertNode(T&& value);
 
 	struct Node
 	{
-		NodeHandle parent;
-		NodeHandle left;
-		NodeHandle right;
+		Node* parent = nullptr;
+		Node* left = nullptr;
+		Node* right = nullptr;
 		T value;
 
-		Node(T const& v) : value(v) {}
-		Node(T&& v) : value(std::move(v)) {}
+		Node() = delete;
+		Node(Memory::MemDesc const& desc, T const& v) : value(v), myDesc(desc) {}
+		Node(Memory::MemDesc const& desc, T&& v) : value(std::move(v)), myDesc(desc) {}
 
-		NodeHandle clone() const 
-		{
-			return Memory::MakeShared<Node>(value);
-		}
-
-		T* operator->() { return &value; }
-		T& operator*() { return value; }
 		T const* operator->() const { return &value; }
 		T const& operator*() const { return value; }
+		T* operator->() { return &value; }
+		T& operator*() { return value; }
+
+		Node* clone() const 
+		{
+			Memory::MemDesc desc = ALLOCATE(sizeof(Node));
+			return new (desc.ptr) Node(desc, value);
+		}
+
+		~Node()
+		{
+			if (left)
+			{
+				left->~Node();
+			}
+			if (right)
+			{
+				right->~Node();
+			}
+			Memory::Deallocate(myDesc);
+		}
+	private:
+		Memory::MemDesc myDesc;
 	};
 
-	NodeHandle m_root;
-	int m_count = 0;
+	Node* m_root = nullptr;
+	uint32_t m_count = 0;
 };
 
 template <typename T>
@@ -140,24 +160,38 @@ void BSTv1<T>::Emplace(Args&& ...args)
 template <typename T>
 void BSTv1<T>::InsertNode(T&& value)
 {
-	NodeHandle* parent = nullptr;
-	NodeHandle* it = &m_root;
-	while (*it)
+	Node* parent = nullptr;
+	Node* it = m_root;
+	bool left = false;
+	while (it)
 	{
 		parent = it;
-		if (value < ***it)
+		if (value < it->value)
 		{
-			it = &(*it)->left;
+			it = it->left;
+			left = true;
 		}
 		else
 		{
-			it = &(*it)->right;
+			it = it->right;
+			left = false;
 		}
 	}
-	*it = Memory::MakeShared<Node>(std::move(value));
-	if (parent)
+	Memory::MemDesc desc = ALLOCATE(sizeof(Node));
+	Node* nodePtr = new (desc.ptr) Node(desc, std::move(value));
+	if (parent == nullptr)
 	{
-		(*it)->parent = *parent;
+		m_root = nodePtr;
+	}
+	else if (left)
+	{
+		parent->left = nodePtr;
+		parent->left->parent = parent;
+	}
+	else
+	{
+		parent->right = nodePtr;
+		parent->right->parent = parent;
 	}
 	++m_count;
 }
@@ -165,45 +199,63 @@ void BSTv1<T>::InsertNode(T&& value)
 template <typename T>
 void BSTv1<T>::Erase(Iterator const& it)
 {
-	using namespace Nodes;
 	MY_ASSERT(it, "Erasing invalid iterator");
 
-	Node& node = *it.GetPtr();
-	NodeHandle* nodePtr = node.parent ? node.parent->left == it.GetPtr() ? &node.parent->left : &node.parent->right : &m_root;
-	NodeHandle* left = &(*nodePtr)->left;
-	NodeHandle* right = &(*nodePtr)->right;
+	Node* ptr = it.GetPtr();
 
-	if (*left && *right)
-	{
-		// Find and detach predecessor
-		NodeHandle predecessor = std::move(BinaryNodes::RightMostLeaf(*left));
-		// Move leaves from ptr to predecessor
-		if (predecessor->right = std::move(*right))
+	auto const ReplaceNode = [this](Node* old, Node* replacement) {
+		if (replacement)
 		{
-			predecessor->right->parent = predecessor;
+			replacement->parent = old->parent;
 		}
-		if (predecessor->left = std::move(*left))
+		if (old->parent)
 		{
-			predecessor->left->parent = predecessor;
+			if (old->parent->left == old)
+			{
+				old->parent->left = replacement;
+			}
+			else
+			{
+				old->parent->right = replacement;
+			}
 		}
-		// Attach predecessor to ptr's parrent
-		predecessor->parent = (*nodePtr)->parent;
-		*nodePtr = std::move(predecessor);
-	}
-	else if (*left)
+		else
+		{
+			m_root = replacement;
+		}
+	};
+
+	if (ptr->left && ptr->right)
 	{
-		(*left)->parent = (*nodePtr)->parent;
-		*nodePtr = std::move(*left);
+		Node* predecessor = BinaryNodes::RightMostLeaf(ptr->left);
+		// Detach predecessor
+		ReplaceNode(predecessor, nullptr);
+
+		// Reattach leaves to predecessor
+		predecessor->right = ptr->right;
+		predecessor->left = ptr->left;
+		ptr->right->parent = predecessor;
+		ptr->left->parent = predecessor;
+
+		// Attach predecessor in place of ptr
+		ReplaceNode(ptr, predecessor);
 	}
-	else if (*right)
+	else if (ptr->left)
 	{
-		(*right)->parent = (*nodePtr)->parent;
-		*nodePtr = std::move(*right);
+		ReplaceNode(ptr, ptr->left);
+	}
+	else if (ptr->right)
+	{
+		ReplaceNode(ptr, ptr->right);
 	}
 	else
 	{
-		*nodePtr = {};
+		ReplaceNode(ptr, nullptr);
 	}
+
+	ptr->right = nullptr;
+	ptr->left = nullptr;
+	ptr->~Node();
 	--m_count;
 }
 

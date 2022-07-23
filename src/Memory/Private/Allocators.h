@@ -8,7 +8,7 @@
 namespace Memory
 {
 
-#define __ENABLE_ALLOCATOR_STATS
+//#define __ENABLE_ALLOCATOR_STATS
 
 namespace Private
 {
@@ -22,6 +22,7 @@ namespace Private
 		uint64_t totalAllocated = 0;
 		uint64_t countDeallocated = 0;
 		uint64_t totalDeallocated = 0;
+		uint64_t unallocated = 0;
 	};
 
 	inline void AddAllocationStat(AllocatorStats& s, uint64_t size)
@@ -29,7 +30,8 @@ namespace Private
 #ifdef __ENABLE_ALLOCATOR_STATS
 		++s.countAllocated; 
 		s.totalAllocated += size;
-#elif
+		s.unallocated += size;
+#else
 		(void)s;(void)size;
 #endif
 	}
@@ -38,7 +40,8 @@ namespace Private
 #ifdef __ENABLE_ALLOCATOR_STATS
 		++s.countDeallocated;
 		s.totalDeallocated += size;
-#elif
+		s.unallocated -= size;
+#else
 		(void)s;(void)size;
 #endif
 	}

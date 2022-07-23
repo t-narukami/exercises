@@ -10,6 +10,7 @@ class SharedHandle
 {
 public:
 	SharedHandle() = default;
+	SharedHandle(nullptr_t) {};
 
 	~SharedHandle()
 	{
@@ -62,6 +63,18 @@ public:
 	T const& operator*() const { return *Get(); }
 	T const* operator->() const { return Get(); }
 
+
+	inline T* Get() 
+	{
+		MY_ASSERT(IsValid(), "Dereferencing invalid SharedHandle");
+		return reinterpret_cast<T*>(m_dataPtr);
+	}
+
+	inline T const* Get() const 
+	{
+		MY_ASSERT(IsValid(), "Dereferencing invalid SharedHandle");
+		return reinterpret_cast<T const*>(m_dataPtr); 
+	}
 private:
 	template <typename T, typename ...Args>
 	friend SharedHandle<T> MakeShared(Args&& ...args);
@@ -111,22 +124,11 @@ private:
 		m_refCounter = nullptr;
 	}
 
-	inline T* Get() 
-	{
-		//MY_ASSERT(IsValid(), "Dereferencing invalid SharedHandle");
-		return reinterpret_cast<T*>(m_dataPtr);
-	}
-
-	inline T const* Get() const 
-	{
-		//MY_ASSERT(IsValid(), "Dereferencing invalid SharedHandle");
-		return reinterpret_cast<T const*>(m_dataPtr); 
-	}
-
 	MemDesc m_desc;
 	RefCounter* m_refCounter = nullptr;
 	void* m_dataPtr = nullptr;
 };
+
 
 template <typename T, typename ...Args>
 SharedHandle<T> MakeShared(Args&& ...args)
